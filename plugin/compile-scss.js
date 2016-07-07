@@ -30,7 +30,7 @@ var convertToStandardPath = function (osPath, partialPath) {
 }
 
 // CompileResult is {css, sourceMap}.
-class SassCompiler extends MultiFileCachingCompiler {
+SassCompiler = class SassCompiler extends MultiFileCachingCompiler {
   constructor() {
     super({
       compilerName: 'sass',
