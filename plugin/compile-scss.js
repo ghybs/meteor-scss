@@ -5,11 +5,6 @@ const Future = Npm.require('fibers/future');
 const files = Plugin.files;
 
 
-Plugin.registerCompiler({
-  extensions: ['scss', 'sass'],
-  archMatching: 'web'
-}, () => new SassCompiler());
-
 var toPosixPath = function (p, partialPath) {
   // Sometimes, you can have a path like \Users\IEUser on windows, and this
   // actually means you want C:\Users\IEUser

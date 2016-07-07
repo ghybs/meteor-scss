@@ -1,31 +1,32 @@
 Package.describe({
-  summary: 'Style with attitude. Sass and SCSS support for Meteor.js.',
-  version: "3.8.0_1",
-  git: "https://github.com/fourseven/meteor-scss.git",
-  name: "fourseven:scss"
+  summary: 'Sass and SCSS compilers for Meteor.',
+  version: '3.8.0_1',
+  git: 'https://github.com/barbatus/meteor-scss.git',
+  name: 'barbatus:scss-compiler'
 });
 
-Package.registerBuildPlugin({
-  name: "compileScssBatch",
-  use: ['caching-compiler@1.0.5_1', 'ecmascript@0.4.6_1', 'underscore@1.0.9'],
-  sources: [
-    'plugin/compile-scss.js'
-  ],
-  npmDependencies: {
-    'node-sass': '3.8.0'
-  }
+Npm.depends({
+  'node-sass': '3.8.0'
 });
 
 Package.onUse(function (api) {
-  api.versionsFrom("1.3.4.1");
-  api.use('isobuild:compiler-plugin@1.0.0');
+  api.versionsFrom('1.3.4.1');
+  api.use([
+    'caching-compiler@1.0.5_1',
+    'ecmascript@0.4.6_1',
+    'underscore@1.0.9'
+  ], 'server');
+
+  api.addFiles(['plugin/compile-scss.js'], 'server');
+
+  api.export(['SassCompiler'], 'server');
 });
 
 Package.on_test(function (api) {
   api.use(['test-helpers',
            'tinytest']);
 
-  api.use(['fourseven:scss']);
+  api.use(['barbatus:scss-compiler']);
 
   // Tests for .scss
   api.addFiles([
@@ -54,5 +55,4 @@ Package.on_test(function (api) {
   //api.addFiles('test/sass/top2.sass', 'client', {isImport: true});
 
   api.addFiles('tests.js', 'client');
-
 });
