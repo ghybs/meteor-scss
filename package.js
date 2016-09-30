@@ -1,6 +1,6 @@
 Package.describe({
   summary: 'Sass and SCSS compilers for Meteor.',
-  version: '3.8.1_1',
+  version: '3.8.1_3',
   git: 'https://github.com/barbatus/meteor-scss.git',
   name: 'barbatus:scss-compiler'
 });
