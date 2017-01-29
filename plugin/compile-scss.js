@@ -1,9 +1,7 @@
-const path = Plugin.path;
-const fs = Plugin.fs;
+const path = Npm.require('path');
+const fs = Npm.require('fs');
 const sass = Npm.require('node-sass');
 const Future = Npm.require('fibers/future');
-const files = Plugin.files;
-
 
 var toPosixPath = function (p, partialPath) {
   // Sometimes, you can have a path like \Users\IEUser on windows, and this
