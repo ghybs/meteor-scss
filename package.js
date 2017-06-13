@@ -1,16 +1,16 @@
 Package.describe({
   name: 'barbatus:scss-compiler',
   summary: 'Sass and SCSS compilers for Meteor.',
-  version: '3.8.3',
+  version: '4.5.0',
   git: 'https://github.com/barbatus/meteor-scss.git',
 });
 
 Npm.depends({
-  'node-sass': '3.8.0'
+  'node-sass': '4.5.0'
 });
 
 Package.onUse(function (api) {
-  api.versionsFrom('1.3.4.1');
+  api.versionsFrom('1.4.2.5');
 
   api.use([
     'isobuild:compiler-plugin@1.0.0',
@@ -24,7 +24,7 @@ Package.onUse(function (api) {
   api.export(['SassCompiler'], 'server');
 });
 
-Package.on_test(function (api) {
+Package.onTest(function (api) {
   api.use(['test-helpers',
            'tinytest']);
 

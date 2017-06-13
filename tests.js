@@ -8,7 +8,12 @@ Tinytest.add("sass/scss - imports", function (test) {
     var t = function (className, style) {
       prefixes.forEach(function(prefix){
         div.className = prefix + '-' + className;
-        test.equal(getStyleProperty(div, 'border-style'), style,  div.className);
+
+        // Read 'border-top-style' instead of 'border-style' (which is set
+        // by the stylesheet) because only the individual styles are computed
+        // and can be retrieved. Trying to read the synthetic 'border-style'
+        // gives an empty string.
+        test.equal(getStyleProperty(div, 'border-top-style'), style,  div.className);
       });
 
     };
@@ -26,4 +31,25 @@ Tinytest.add("sass/scss - imports", function (test) {
   } finally {
     document.body.removeChild(div);
   }
+});
+
+
+Tinytest.add('sass/scss - import from includePaths', function (test) {
+
+  var div = document.createElement('div');
+
+  document.body.appendChild(div);
+
+  try {
+
+    div.className = 'from-include-paths';
+
+    test.equal(getStyleProperty(div, 'border-bottom-style'), 'outset',  div.className);
+
+  } finally {
+
+    document.body.removeChild(div);
+
+  }
+
 });

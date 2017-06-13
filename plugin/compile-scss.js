@@ -3,6 +3,8 @@ const fs = Npm.require('fs');
 const sass = Npm.require('node-sass');
 const Future = Npm.require('fibers/future');
 
+let _includePaths;
+
 var toPosixPath = function (p, partialPath) {
   // Sometimes, you can have a path like \Users\IEUser on windows, and this
   // actually means you want C:\Users\IEUser
@@ -72,21 +74,6 @@ SassCompiler = class SassCompiler extends MultiFileCachingCompiler {
     var totalImportPath = [];
     var sourceMapPaths = ['.'+inputFile.getDisplayPath()];
 
-    //Handle deprecation of fs.existsSYnc
-    //XXX: remove when meteor is fully on node 4+
-    function fileExists(file){
-      if(fs.statSync){
-        try{
-          fs.statSync(file);
-        }catch(e){
-          return false;
-        }
-        return true;
-      }else{
-        return fs.existsSync(file);
-      }
-    }
-
     function addUnderscore(file){
       if(!self.hasUnderscore(file)){
         file = path.join(path.dirname(file),'_'+path.basename(file));
@@ -132,9 +119,9 @@ SassCompiler = class SassCompiler extends MultiFileCachingCompiler {
       }
 
       //Nothing found...
-      throw new Error(`File to import: ${rawImportPath} not found in file: ${totalImportPath[totalImportPath.length-2]}`);
+      return null;
 
-    }
+    };
 
     //Handle import statements found by the sass compiler, used to handle cross-package imports
     const importer = function(url,prev,done){
@@ -164,7 +151,16 @@ SassCompiler = class SassCompiler extends MultiFileCachingCompiler {
       }
 
       try{
-        const parsed = getRealImportPath(importPath);
+        let parsed = getRealImportPath(importPath);
+
+        if (!parsed) {
+          parsed = _getRealImportPathFromIncludes(url, getRealImportPath);
+        }
+        if (!parsed) {
+          //Nothing found...
+          throw new Error(`File to import: ${url} not found in file: ${totalImportPath[totalImportPath.length-2]}`);
+        }
+
         if (parsed.absolute) {
           sourceMapPaths.push(parsed.path);
           done({ contents: fs.readFileSync(parsed.path, 'utf8')});
@@ -187,6 +183,7 @@ SassCompiler = class SassCompiler extends MultiFileCachingCompiler {
       sourceMapContents: true,
       sourceMapEmbed:    false,
       sourceComments:    false,
+      omitSourceMapUrl:  true,
       sourceMapRoot: '.',
       indentedSyntax : inputFile.getExtension() === 'sass',
       outFile: '.'+inputFile.getBasename(),
@@ -242,6 +239,86 @@ SassCompiler = class SassCompiler extends MultiFileCachingCompiler {
   }
 }
 
+
+function _getRealImportPathFromIncludes(importPath, getRealImportPathFn){
+
+  _prepareIncludePaths();
+
+  let possibleFilePath, foundFile;
+
+  for (let includePath of _includePaths) {
+    possibleFilePath = path.join(includePath, importPath);
+    foundFile = getRealImportPathFn(possibleFilePath);
+
+    if (foundFile) {
+      return foundFile;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * If not loaded yet, load configuration and includePaths.
+ * @private
+ */
+function _prepareIncludePaths() {
+  if (typeof _includePaths === 'undefined') {
+    const config = _loadConfigurationFile();
+
+    _loadIncludePaths(config);
+  }
+}
+
+/**
+ * Extract the 'includePaths' key from specified configuration, if any, and
+ * store it into _includePaths.
+ * @param config
+ * @private
+ */
+function _loadIncludePaths(config) {
+  // Extract includePaths, if any
+  const includePaths = config['includePaths'];
+
+  if (includePaths && _.isArray(includePaths)) {
+    _includePaths = includePaths;
+  } else {
+    _includePaths = [];
+  }
+}
+
+/**
+ * Read the content of 'scss-config.json' file (if any)
+ * @returns {{}}
+ * @private
+ */
+function _loadConfigurationFile() {
+  return _getConfig('scss-config.json') || {};
+}
+
+/**
+ * Build a path from current process working directory (i.e. meteor project
+ * root) and specified file name, try to get the file and parse its content.
+ * @param configFileName
+ * @returns {{}}
+ * @private
+ */
+function _getConfig(configFileName) {
+  const appdir = process.env.PWD || process.cwd();
+  const custom_config_filename = path.join(appdir, configFileName);
+  let userConfig = {};
+
+  if (fileExists(custom_config_filename)) {
+    userConfig = fs.readFileSync(custom_config_filename, {
+      encoding: 'utf8'
+    });
+    userConfig = JSON.parse(userConfig);
+  } else {
+    console.warn('Could not find configuration file at ' + custom_config_filename);
+  }
+  return userConfig;
+}
+
 function decodeFilePath (filePath) {
   const match = filePath.match(/{(.*)}\/(.*)$/);
   if (! match)
@@ -253,4 +330,19 @@ function decodeFilePath (filePath) {
   }
 
   return 'packages/' + match[1] + '/' + match[2];
+}
+
+//Handle deprecation of fs.existsSYnc
+//XXX: remove when meteor is fully on node 4+
+function fileExists(file){
+  if(fs.statSync){
+    try{
+      fs.statSync(file);
+    }catch(e){
+      return false;
+    }
+    return true;
+  }else{
+    return fs.existsSync(file);
+  }
 }
